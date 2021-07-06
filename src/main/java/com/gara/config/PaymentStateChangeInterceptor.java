@@ -1,0 +1,37 @@
+package com.gara.config;
+
+import com.gara.enums.PaymentEvent;
+import com.gara.enums.PaymentState;
+import com.gara.repository.PaymentRepository;
+import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.Message;
+import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.state.State;
+import org.springframework.statemachine.support.StateMachineInterceptorAdapter;
+import org.springframework.statemachine.transition.Transition;
+import org.springframework.stereotype.Component;
+
+@RequiredArgsConstructor
+@Component
+public class PaymentStateChangeInterceptor extends StateMachineInterceptorAdapter<PaymentState, PaymentEvent> {
+
+    private final PaymentRepository paymentRepository;
+
+    @Override
+    public void preStateChange(State<PaymentState, PaymentEvent> state, Message<PaymentEvent> message,
+                               Transition<PaymentState, PaymentEvent> transition,
+                               StateMachine<PaymentState, PaymentEvent> stateMachine) {
+
+        Optional.ofNullable(message)
+                .flatMap(msg -> Optional.ofNullable(
+                        (Long) msg.getHeaders().getOrDefault("PAYMENT_ID",
+                                -1L)))
+                .flatMap(paymentRepository::findById)
+                .ifPresent(payment -> {
+                    payment.setStatus(state.getId());
+                    paymentRepository.save(payment);
+                });
+    }
+
+}
