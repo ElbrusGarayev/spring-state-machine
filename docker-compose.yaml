@@ -1,0 +1,16 @@
+version: "3.7"
+networks:
+  state-net:
+    external: false
+services:
+  bff-postgres:
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: state_db
+    networks:
+      - state-net
